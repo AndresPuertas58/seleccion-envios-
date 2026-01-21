@@ -175,13 +175,33 @@ class CalculoEnvioService:
             # Obtener todos los vehículos disponibles
             vehiculos_disponibles = self.buscar_vehiculos_disponibles()
             
-            # Buscar vehículos cercanos
-            vehiculos_cercanos = self.graphhopper.buscar_vehiculos_cercanos(
-                float(punto_venta.latitud),
-                float(punto_venta.longitud),
-                vehiculos_disponibles,
-                radio_km=50.0  # 50 km de radio
-            )
+            # Buscar vehículos cercanos (Lógica local)
+            vehiculos_cercanos = []
+            origen_lat = float(punto_venta.latitud)
+            origen_lng = float(punto_venta.longitud)
+            radio_km = 50.0
+            
+            for v in vehiculos_disponibles:
+                v_lat = None
+                v_lng = None
+                
+                # Obtener coordenadas del diccionario de ubicación
+                if v.get('ubicacion'):
+                    v_lat = v['ubicacion'].get('latitud')
+                    v_lng = v['ubicacion'].get('longitud')
+                
+                if v_lat is not None and v_lng is not None:
+                    distancia = self._calcular_distancia_aproximada(
+                        origen_lat, origen_lng, 
+                        float(v_lat), float(v_lng)
+                    )
+                    
+                    if distancia <= radio_km:
+                        v['distancia_km'] = distancia
+                        vehiculos_cercanos.append(v)
+            
+            # Ordenar por distancia (más cercanos primero)
+            vehiculos_cercanos.sort(key=lambda x: x.get('distancia_km', float('inf')))
             
             # Calcular propuestas para los 3 vehículos más cercanos
             propuestas = []
