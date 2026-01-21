@@ -1,0 +1,606 @@
+components:
+  schemas:
+    Error:
+      properties:
+        error:
+          description: Mensaje de error
+          type: string
+      type: object
+    Success:
+      properties:
+        message:
+          description: "Mensaje de \xE9xito"
+          type: string
+      type: object
+info:
+  contact:
+    email: soporte@sistema-transporte.com
+    name: "Soporte T\xE9cnico"
+  description: "API para gesti\xF3n de veh\xEDculos, conductores y usuarios de transporte"
+  title: API Sistema de Transporte
+  version: 1.0.0
+openapi: 3.0.0
+paths:
+  /api/conductores:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Conductor'
+                type: array
+          description: Lista de conductores
+      summary: Obtener todos los conductores
+      tags:
+      - Conductores
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                apellido:
+                  example: "P\xE9rez"
+                  type: string
+                direccion:
+                  example: Calle Principal 123
+                  type: string
+                dni:
+                  example: '12345678'
+                  type: string
+                email:
+                  example: juan@example.com
+                  format: email
+                  type: string
+                estado:
+                  example: activo
+                  type: string
+                fecha_nacimiento:
+                  example: '1980-05-15'
+                  format: date
+                  type: string
+                licencia:
+                  example: A1
+                  type: string
+                nombre:
+                  example: Juan
+                  type: string
+                telefono:
+                  example: 555-1234
+                  type: string
+              required:
+              - dni
+              - nombre
+              - apellido
+              type: object
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Conductor'
+                  message:
+                    type: string
+                type: object
+          description: Conductor creado exitosamente
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: Crear un nuevo conductor
+      tags:
+      - Conductores
+  /api/conductores/{id}:
+    delete:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+          description: Conductor eliminado
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: Eliminar un conductor
+      tags:
+      - Conductores
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conductor'
+          description: Datos del conductor
+        '404':
+          $ref: '#/components/responses/404'
+      summary: Obtener un conductor por ID
+      tags:
+      - Conductores
+    put:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Conductor'
+                  message:
+                    type: string
+                type: object
+          description: Conductor actualizado
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: Actualizar un conductor
+      tags:
+      - Conductores
+  /api/estadisticas:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  conductores:
+                    properties:
+                      activos:
+                        type: integer
+                      inactivos:
+                        type: integer
+                      total:
+                        type: integer
+                    type: object
+                  usuarios:
+                    properties:
+                      activos:
+                        type: integer
+                      inactivos:
+                        type: integer
+                      total:
+                        type: integer
+                    type: object
+                  vehiculos:
+                    properties:
+                      disponibles:
+                        type: integer
+                      en_uso:
+                        type: integer
+                      mantenimiento:
+                        type: integer
+                      total:
+                        type: integer
+                    type: object
+                type: object
+          description: "Estad\xEDsticas del sistema"
+      summary: "Obtener estad\xEDsticas del sistema"
+      tags:
+      - "Estad\xEDsticas"
+  /api/health:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  database:
+                    type: string
+                  status:
+                    type: string
+                  timestamp:
+                    format: date-time
+                    type: string
+                type: object
+          description: Sistema saludable
+        '500':
+          content:
+            application/json:
+              schema:
+                properties:
+                  database:
+                    type: string
+                  error:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Sistema no saludable
+      summary: Verificar estado del sistema
+      tags:
+      - Sistema
+  /api/usuarios:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Usuario'
+                type: array
+          description: Lista de usuarios
+      summary: Obtener todos los usuarios
+      tags:
+      - Usuarios
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                activo:
+                  example: true
+                  type: boolean
+                email:
+                  example: juan@example.com
+                  format: email
+                  type: string
+                nombre:
+                  example: "Juan P\xE9rez"
+                  type: string
+                password:
+                  example: MiClave123
+                  format: password
+                  type: string
+                telefono:
+                  example: 555-1234
+                  type: string
+                username:
+                  example: jperez
+                  type: string
+              required:
+              - username
+              - email
+              - nombre
+              - password
+              type: object
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                type: object
+          description: Usuario creado exitosamente
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: Crear un nuevo usuario
+      tags:
+      - Usuarios
+  /api/usuarios/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                password:
+                  example: MiClave123
+                  format: password
+                  type: string
+                username:
+                  example: jperez
+                  type: string
+              required:
+              - username
+              - password
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                type: object
+          description: Login exitoso
+        '401':
+          $ref: '#/components/responses/401'
+      summary: Autenticar usuario
+      tags:
+      - Usuarios
+  /api/usuarios/{id}:
+    delete:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+          description: Usuario eliminado
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: Eliminar un usuario
+      tags:
+      - Usuarios
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+          description: Datos del usuario
+        '404':
+          $ref: '#/components/responses/404'
+      summary: Obtener un usuario por ID
+      tags:
+      - Usuarios
+    put:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                type: object
+          description: Usuario actualizado
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: Actualizar un usuario
+      tags:
+      - Usuarios
+  /api/usuarios/{id}/cambiar-password:
+    put:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                current_password:
+                  format: password
+                  type: string
+                new_password:
+                  format: password
+                  type: string
+              required:
+              - current_password
+              - new_password
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+          description: "Contrase\xF1a actualizada"
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: "Cambiar contrase\xF1a"
+      tags:
+      - Usuarios
+  /api/vehiculos:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Vehiculo'
+                type: array
+          description: "Lista de veh\xEDculos"
+      summary: "Obtener todos los veh\xEDculos"
+      tags:
+      - "Veh\xEDculos"
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                codigo_serial:
+                  example: CT-001
+                  type: string
+                color:
+                  example: Rojo
+                  type: string
+                estado:
+                  example: disponible
+                  type: string
+                fecha_adquisicion:
+                  example: '2023-01-15'
+                  format: date
+                  type: string
+                marca:
+                  example: Volvo
+                  type: string
+                modelo:
+                  example: '2023'
+                  type: string
+                placa:
+                  example: ABC-123
+                  type: string
+                tipo:
+                  example: "Cami\xF3n"
+                  type: string
+                ultimo_mantenimiento:
+                  example: '2023-12-01'
+                  format: date
+                  type: string
+              required:
+              - tipo
+              - modelo
+              - codigo_serial
+              type: object
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Vehiculo'
+                  message:
+                    type: string
+                type: object
+          description: "Veh\xEDculo creado exitosamente"
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: "Crear un nuevo veh\xEDculo"
+      tags:
+      - "Veh\xEDculos"
+  /api/vehiculos/{id}:
+    delete:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+          description: "Veh\xEDculo eliminado"
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: "Eliminar un veh\xEDculo"
+      tags:
+      - "Veh\xEDculos"
+    get:
+      parameters:
+      - description: "ID del veh\xEDculo"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehiculo'
+          description: "Datos del veh\xEDculo"
+        '404':
+          $ref: '#/components/responses/404'
+      summary: "Obtener un veh\xEDculo por ID"
+      tags:
+      - "Veh\xEDculos"
+    put:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Vehiculo'
+                  message:
+                    type: string
+                type: object
+          description: "Veh\xEDculo actualizado"
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      summary: "Actualizar un veh\xEDculo"
+      tags:
+      - "Veh\xEDculos"
+servers:
+- description: Servidor de desarrollo
+  url: http://localhost:5000
+tags:
+- description: "Operaciones con veh\xEDculos"
+  name: "Veh\xEDculos"
+- description: Operaciones con conductores
+  name: Conductores
+- description: Operaciones con usuarios de la app
+  name: Usuarios
+- description: "Estad\xEDsticas del sistema"
+  name: "Estad\xEDsticas"
+- description: Endpoints del sistema
+  name: Sistema
