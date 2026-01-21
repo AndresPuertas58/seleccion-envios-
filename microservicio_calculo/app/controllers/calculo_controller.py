@@ -140,6 +140,25 @@ def calcular_peajes():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@calculo_bp.route('/procesar-pendientes', methods=['POST'])
+def procesar_pendientes():
+    """
+    Procesar automÃ¡ticamente todos los envÃ­os pendientes.
+    Asigna vehÃ­culos y calcula rutas masivamente.
+    """
+    try:
+        servicio = CalculoEnvioService()
+        resultados = servicio.procesar_envios_pendientes()
+        
+        return jsonify({
+            'success': True,
+            'total_procesados': len(resultados),
+            'detalles': resultados
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @calculo_bp.route('/simular-envio', methods=['POST'])
 def simular_envio():
     """Simular un envío completo con vehículos de ubicaciones reales"""

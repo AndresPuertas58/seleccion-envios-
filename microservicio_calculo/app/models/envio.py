@@ -18,8 +18,7 @@ class Envio(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relaciones
-    punto_venta = db.relationship('PuntoVenta')
-    # CAMBIO: Cambiar 'calculos' por 'calculos_envio' para evitar conflicto
+    punto_venta = db.relationship('PuntoVenta', back_populates='envios')
     calculos_envio = db.relationship('CalculoEnvio', backref='envio_relacion', cascade='all, delete-orphan')
     
     def to_dict(self, include_punto_venta: bool = False, include_calculos: bool = False):

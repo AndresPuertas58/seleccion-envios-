@@ -15,7 +15,9 @@ class Destino(db.Model):
                           onupdate=db.func.current_timestamp())
     
     
-    envios = relationship('Envio', secondary='envio_destinos', back_populates='destinos')
+    # Relaciones
+    # No hay relación directa con envío (por string) pero se puede inferir si fuera necesario
+    # envios = relationship('Envio', secondary='envio_destinos', back_populates='destinos')
     
     def to_dict(self):
         """Convertir a diccionario"""

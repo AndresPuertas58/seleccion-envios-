@@ -2,6 +2,7 @@ from app.models.vehiculo import Vehiculo
 from app.models.conductor import Conductor
 from app.models.envio import Envio
 from app.models.punto_venta import PuntoVenta
+from app.models.destino import Destino
 from app.models.envio_calculo import CalculoEnvio
 from app.models.ubicacion import Ubicacion
 from app.services.graphhopper_service import GraphhopperService
@@ -76,10 +77,17 @@ class CalculoEnvioService:
             origen_lat = float(punto_venta.latitud) if punto_venta.latitud else 0
             origen_lng = float(punto_venta.longitud) if punto_venta.longitud else 0
             
-            # TODO: Obtener coordenadas reales del destino
-            # Por ahora usamos coordenadas por defecto
-            destino_lat = 4.609710  # Bogotá centro
-            destino_lng = -74.081749
+            # Obtener coordenadas reales del destino usando la tabla Destino
+            destino_obj = Destino.query.filter_by(ciudad=envio.destino).first()
+            if not destino_obj:
+                # Intentar buscar por coincidencia parcial si la exacta falla
+                destino_obj = Destino.query.filter(Destino.ciudad.ilike(f"%{envio.destino}%")).first()
+            
+            if not destino_obj:
+                return None, f"Destino '{envio.destino}' no encontrado en la base de datos de destinos"
+            
+            destino_lat = float(destino_obj.latitud)
+            destino_lng = float(destino_obj.longitud)
             
             # 1. Obtener ruta de Graphhopper - CORREGIDO
             ruta_info = self.graphhopper.obtener_ruta(
@@ -315,10 +323,21 @@ class CalculoEnvioService:
                 criterios.append('capacidad_insuficiente')
             
             # 2. Proximidad
-            if vehiculo.get('ubicacion_lat') and vehiculo.get('ubicacion_lng'):
+            vehiculo_lat = None
+            vehiculo_lng = None
+            
+            if vehiculo.get('ubicacion'):
+                vehiculo_lat = vehiculo['ubicacion'].get('latitud')
+                vehiculo_lng = vehiculo['ubicacion'].get('longitud')
+            elif vehiculo.get('ubicacion_lat') and vehiculo.get('ubicacion_lng'):
+                # Fallback por si acaso llega plano
+                vehiculo_lat = vehiculo.get('ubicacion_lat')
+                vehiculo_lng = vehiculo.get('ubicacion_lng')
+
+            if vehiculo_lat and vehiculo_lng:
                 distancia = self._calcular_distancia_aproximada(
                     origen_lat, origen_lng,
-                    vehiculo['ubicacion_lat'], vehiculo['ubicacion_lng']
+                    vehiculo_lat, vehiculo_lng
                 )
                 vehiculo['distancia_origen_km'] = distancia
                 
@@ -358,3 +377,68 @@ class CalculoEnvioService:
         distancia = self._calcular_distancia_aproximada(lat1, lng1, lat2, lng2)
         velocidad_promedio = 40  # km/h
         return (distancia / velocidad_promedio) * 60
+
+    def procesar_envios_pendientes(self) -> List[Dict]:
+        """
+        Procesar MASIVAMENTE todos los envíos pendientes:
+        1. Buscar envíos pendientes
+        2. Para cada uno, encontrar mejor vehículo
+        3. Calcular ruta y costos
+        4. Guardar y retornar resultados
+        """
+        resultados = []
+        
+        # 1. Buscar envíos pendientes
+        envios = Envio.query.filter_by(estado='pendiente').all()
+        print(f"Procesando {len(envios)} envios pendientes...")
+        
+        for envio in envios:
+            try:
+                print(f" >> Procesando envio ID {envio.id} ({envio.destino})")
+                
+                # 2. Encontrar mejor vehículo
+                propuestas = self.encontrar_mejor_vehiculo(envio.id)
+                
+                if not propuestas:
+                    resultados.append({
+                        'envio_id': envio.id,
+                        'estado': 'error',
+                        'mensaje': 'No se encontraron vehículos disponibles cercanos'
+                    })
+                    continue
+                
+                # Tomar la mejor propuesta (la primera, ya viene ordenada)
+                mejor_propuesta = propuestas[0]
+                vehiculo = mejor_propuesta['vehiculo']
+                vehiculo_id = vehiculo['id']
+                
+                print(f"    Vehículo seleccionado: {vehiculo.get('placa')} (ID {vehiculo_id})")
+                
+                # 3. Calcular ruta y costos (Guardar en BD)
+                calculo, error = self.calcular_envio(envio.id, vehiculo_id)
+                
+                if error:
+                    resultados.append({
+                        'envio_id': envio.id,
+                        'estado': 'error',
+                        'mensaje': error
+                    })
+                else:
+                    # Éxito
+                    resultados.append({
+                        'envio_id': envio.id,
+                        'estado': 'procesado',
+                        'vehiculo_asignado': vehiculo,
+                        'calculo': calculo.to_dict(),
+                        'mensaje': 'Cálculo realizado y guardado exitosamente'
+                    })
+                    
+            except Exception as e:
+                print(f"Error procesando envio {envio.id}: {e}")
+                resultados.append({
+                    'envio_id': envio.id,
+                    'estado': 'error',
+                    'mensaje': str(e)
+                })
+        
+        return resultados
