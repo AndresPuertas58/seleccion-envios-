@@ -174,12 +174,22 @@ class CalculoEnvioService:
             
             # Obtener todos los vehículos disponibles
             vehiculos_disponibles = self.buscar_vehiculos_disponibles()
+            print(f"DEBUG: Encontrados {len(vehiculos_disponibles)} vehículos disponibles totales (con conductor y tipo camion)")
             
             # Buscar vehículos cercanos (Lógica local)
             vehiculos_cercanos = []
-            origen_lat = float(punto_venta.latitud)
-            origen_lng = float(punto_venta.longitud)
-            radio_km = 50.0
+            
+            try:
+                origen_lat = float(punto_venta.latitud) if punto_venta.latitud else 0
+                origen_lng = float(punto_venta.longitud) if punto_venta.longitud else 0
+            except (ValueError, TypeError):
+                print(f"DEBUG: Error convertiendo coordenadas de punto de venta: {punto_venta.latitud}, {punto_venta.longitud}")
+                origen_lat = 0
+                origen_lng = 0
+
+            print(f"DEBUG: Buscando cerca de Origen: ({origen_lat}, {origen_lng})")
+            
+            radio_km = 50.0  # Puedes aumentar esto para probar si es el problema
             
             for v in vehiculos_disponibles:
                 v_lat = None
@@ -196,12 +206,20 @@ class CalculoEnvioService:
                         float(v_lat), float(v_lng)
                     )
                     
+                    print(f"DEBUG: Vehiculo {v.get('placa')} a {distancia:.2f} km")
+                    
                     if distancia <= radio_km:
                         v['distancia_km'] = distancia
                         vehiculos_cercanos.append(v)
+                    else:
+                        print(f"DEBUG: Vehículo fuera de rango (> {radio_km} km)")
+                else:
+                    print(f"DEBUG: Vehiculo {v.get('placa')} NO tiene coordenadas validas: {v.get('ubicacion')}")
             
             # Ordenar por distancia (más cercanos primero)
             vehiculos_cercanos.sort(key=lambda x: x.get('distancia_km', float('inf')))
+            
+            print(f"DEBUG: Total vehículos cercanos encontrados: {len(vehiculos_cercanos)}")
             
             # Calcular propuestas para los 3 vehículos más cercanos
             propuestas = []
